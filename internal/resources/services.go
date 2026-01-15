@@ -27,6 +27,14 @@ var svcSelectorKey = "samba-operator.samba.org/service"
 
 func newServiceForSmb(planner *pln.Planner, ns string) *corev1.Service {
 	labels := labelsForSmbServer(planner)
+	svcType := toServiceType(planner.ServiceType())
+
+	var lbClass *string
+	if svcType == corev1.ServiceTypeLoadBalancer {
+		c := "io.cilium/node"
+		lbClass = &c
+	}
+
 	return &corev1.Service{
 		ObjectMeta: metav1.ObjectMeta{
 			Name:      planner.InstanceName(),
@@ -34,7 +42,8 @@ func newServiceForSmb(planner *pln.Planner, ns string) *corev1.Service {
 			Labels:    labels,
 		},
 		Spec: corev1.ServiceSpec{
-			Type: toServiceType(planner.ServiceType()),
+			Type:              svcType,
+			LoadBalancerClass: lbClass,
 			Ports: []corev1.ServicePort{{
 				Name:     "smb",
 				Protocol: corev1.ProtocolTCP,
